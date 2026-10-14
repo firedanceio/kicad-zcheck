@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kicad-zcheck"
+version = "0.1.0"
+description = "Impedance and return-path checks on a KiCad board's own stack-up and routed copper."
+readme = "README.md"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Firedance" }]
+requires-python = ">=3.9"
+dependencies = ["shapely>=2.0"]
+optional-dependencies = { test = ["pytest>=7"] }
+keywords = ["kicad", "pcb", "impedance", "stackup", "signal integrity", "return path"]
+classifiers = [
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
+]
+
+[project.urls]
+Homepage = "https://github.com/firedanceio/kicad-zcheck"
+
+[project.scripts]
+kicad-zcheck = "kicad_zcheck.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
