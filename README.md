@@ -29,8 +29,8 @@ was actually routed for the memory channel:
 
 ```bash
 NETS="--nets DQ* --nets DMI* --nets CA* --nets CK_A_* --nets CKE0_A --nets CS0_A"
-python3 -m kicad_zcheck routed lpddr4-test-board.kicad_pcb $NETS --se 40 --diff 80
-python3 -m kicad_zcheck returns lpddr4-test-board.kicad_pcb $NETS
+python3 -m kicad_zcheck routed lpddr4-test-board.kicad_pcb $NETS --se 40 --diff 80 --map routed.png
+python3 -m kicad_zcheck returns lpddr4-test-board.kicad_pcb $NETS --map returns.png
 ```
 
 ```
@@ -49,8 +49,14 @@ distance to the return path: median 0.00 mm, 90th pct 0.00 mm, worst 0.00 mm
 
 The inner-layer routing on In2 is on target: 96 % of the single-ended and 98 % of the pair copper within 10 %. The
 nets routed on the top layer run at the same narrow width, which is well above 40 ohm as a microstrip on this
-stack-up (the estimate ignores solder mask, which pulls it down a few ohm). Every layer change keeps the same ground
-reference, so no return current has to jump planes.
+stack-up (the estimate ignores solder mask, which pulls it down a few ohm). With `--map`, each segment is drawn in the colour of its result:
+
+![kicad-zcheck routed map of the Antmicro LPDDR4 channel](docs/antmicro-lpddr4-routed.png)
+
+Every layer change keeps the same ground reference, so no return current has to jump planes. The `returns` map rings
+each layer change by how far its return current has to travel:
+
+![kicad-zcheck returns map of the Antmicro LPDDR4 channel](docs/antmicro-lpddr4-returns.png)
 
 ## Why we wrote it
 
@@ -79,7 +85,8 @@ memory bus is a reference where it exists and nowhere else.
 | `routed BOARD --nets PATTERN [--pair-suffix _P,_N] [--tol 10]` | length of the selected nets' copper within tolerance, per layer, and the worst nets; pair legs judged at the gap measured at each segment, loosely coupled beyond 3 plane heights |
 | `returns BOARD --nets PATTERN` | at each via where a selected net changes layer: the reference plane net on each side and the distance to the return path: none needed (same plane), the nearest via of the plane net spanning both planes, or the nearest capacitor between two different plane nets |
 
-Net patterns use `*` and `?`; `--exclude` drops nets. `--json FILE` writes the details.
+Net patterns use `*` and `?`; `--exclude` drops nets. `--json FILE` writes the details. `routed` and `returns` take
+`--map out.png` to draw the selected nets on the board, coloured by the result (needs Pillow).
 
 ## Install and run
 

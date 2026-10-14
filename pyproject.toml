@@ -11,7 +11,7 @@ license = { text = "Apache-2.0" }
 authors = [{ name = "Firedance" }]
 requires-python = ">=3.9"
 dependencies = ["shapely>=2.0"]
-optional-dependencies = { test = ["pytest>=7"] }
+optional-dependencies = { maps = ["Pillow>=9"], test = ["pytest>=7"] }
 keywords = ["kicad", "pcb", "impedance", "stackup", "signal integrity", "return path"]
 classifiers = [
   "License :: OSI Approved :: Apache Software License",

@@ -103,7 +103,8 @@ class Share:
 
 
 def routed_share(b, stack: Stackup, pm: "PlaneMap", patterns: list[str], pair_suffix: tuple[str, str] | None,
-                 exclude: list[str] | None, z_se: float, z_diff: float, tol: float, loose_factor: float = 3.0) -> Share:
+                 exclude: list[str] | None, z_se: float, z_diff: float, tol: float, loose_factor: float = 3.0,
+                 collect: list | None = None) -> Share:
     """How much copper of the selected nets is within +-tol (fraction) of its target. Single nets: Z0 vs z_se. Pair
     legs (partner found by swapping the suffix): Zdiff at the gap measured at each segment's midpoint vs z_diff; a
     partner farther than loose_factor x the nearer plane distance counts as loosely coupled (2 x Z0)."""
@@ -142,8 +143,11 @@ def routed_share(b, stack: Stackup, pm: "PlaneMap", patterns: list[str], pair_su
         mx, my = _M((t.GetStart().x + t.GetEnd().x) / 2), _M((t.GetStart().y + t.GetEnd().y) / 2)
         e = pm.env_at(stack, L, mx, my)
         ln = _M(t.GetLength())
+        seg = ((_M(t.GetStart().x), _M(t.GetStart().y)), (_M(t.GetEnd().x), _M(t.GetEnd().y)), _M(t.GetWidth()))
         if e.h_up is None and e.h_down is None:
             res.skipped[names[L]] = res.skipped.get(names[L], 0.0) + ln
+            if collect is not None:
+                collect.append(seg + (None,))
             continue
         n = t.GetNetname()
         w = _M(t.GetWidth())
@@ -156,6 +160,8 @@ def routed_share(b, stack: Stackup, pm: "PlaneMap", patterns: list[str], pair_su
         else:
             z, kind, tgt = z0(e, w), "single", z_se
         inb = abs(z - tgt) <= tol * tgt
+        if collect is not None:
+            collect.append(seg + (abs(z - tgt) / tgt,))
         r = res.rows.setdefault((kind, names[L]), [0.0, 0.0, 0.0])
         r[0] += ln * inb
         r[1] += ln

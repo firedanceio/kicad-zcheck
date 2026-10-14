@@ -63,6 +63,7 @@ def main(argv: list[str] | None = None) -> int:
             p.add_argument("--nets", required=True, action="append", help="net pattern (wildcards), repeatable")
             p.add_argument("--exclude", action="append", default=[], help="net pattern to leave out, repeatable")
             p.add_argument("--json", metavar="FILE")
+            p.add_argument("--map", metavar="PNG", help="draw the selected nets on the board, coloured by the result (needs Pillow)")
 
     p = sub.add_parser("widths", help="width per layer for the targets")
     common(p)
@@ -104,7 +105,17 @@ def main(argv: list[str] | None = None) -> int:
     pm = PlaneMap(b, fills, set(a.planes.split(",")) if a.planes else None)
     if a.cmd == "routed":
         suf = tuple(a.pair_suffix.split(",")) if a.pair_suffix else None
-        r = routed_share(b, stack, pm, a.nets, suf, a.exclude, a.se, a.diff, a.tol / 100.0, a.loose)
+        segs = [] if a.map else None
+        r = routed_share(b, stack, pm, a.nets, suf, a.exclude, a.se, a.diff, a.tol / 100.0, a.loose, segs)
+        if a.map:
+            from .render import AMBER, GREEN, GREY, RED, draw
+            t = a.tol / 100.0
+            col = lambda d: GREY if d is None else GREEN if d <= t else AMBER if d <= 2 * t else RED
+            pts = [p for s0, s1, *_ in segs for p in (s0, s1)]
+            crop = (min(p[0] for p in pts) - 3, min(p[1] for p in pts) - 3, max(p[0] for p in pts) + 3, max(p[1] for p in pts) + 3) if pts else None
+            draw(b, a.map, [(s0, s1, w, col(d)) for s0, s1, w, d in segs], crop=crop, title=f"kicad-zcheck routed ({a.se:g} / {a.diff:g} ohm)",
+                 legend=[(GREEN, f"within {a.tol:g} %"), (AMBER, f"within {2 * a.tol:g} %"), (RED, "further off"), (GREY, "no reference plane")])
+            print(f"map: {a.map}")
         tin = tall = 0.0
         for (kind, L), (i, t, zs) in sorted(r.rows.items()):
             tin += i
@@ -135,6 +146,18 @@ def main(argv: list[str] | None = None) -> int:
         for h in sorted(hops, key=lambda h: -(h.distance if h.distance is not None else 1e9))[:8]:
             d = "none found" if h.distance is None else f"{h.distance:.2f} mm"
             print(f"  {h.net} @({h.x:.2f},{h.y:.2f}) {h.layers[0]}->{h.layers[1]} refs {h.refs[0]}/{h.refs[1]}: {h.path}, {d}")
+        if a.map:
+            import pcbnew
+            from fnmatch import fnmatchcase
+            from .render import AMBER, GREEN, RED, draw, span
+            sel = {t.GetNetname() for t in b.GetTracks() if any(fnmatchcase(t.GetNetname(), p) for p in a.nets)
+                   and not any(fnmatchcase(t.GetNetname(), e) for e in a.exclude)}
+            lines = [((t.GetStart().x / 1e6, t.GetStart().y / 1e6), (t.GetEnd().x / 1e6, t.GetEnd().y / 1e6), t.GetWidth() / 1e6, (120, 140, 170))
+                     for t in b.GetTracks() if t.Type() != pcbnew.PCB_VIA_T and t.GetNetname() in sel]
+            col = lambda d: RED if d is None or d > 3 else AMBER if d > 1 else GREEN
+            draw(b, a.map, lines, markers=[(h.x, h.y, 9, col(h.distance)) for h in hops], crop=span(b, sel),
+                 title="kicad-zcheck returns", legend=[(GREEN, "return path within 1 mm"), (AMBER, "1-3 mm"), (RED, "over 3 mm or none")])
+            print(f"map: {a.map}")
         if a.json:
             json.dump([h.__dict__ for h in hops], open(a.json, "w"), indent=1)
         return 1 if missing else 0
