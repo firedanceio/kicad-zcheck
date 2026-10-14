@@ -29,14 +29,47 @@ def test_environment():
     assert env(st, "B.Cu", PLANES).h_up == pytest.approx(0.092)
 
 
-def test_values_match_the_closed_forms():
+def test_microstrip_matches_reference_values():
+    from kicad_zcheck.model import _ms
+    assert _ms(3.0, 1.6, 4.4, 0.035) == pytest.approx(50.4, abs=0.3)      # the classic 50 ohm line on 1.6 mm FR4
+    assert _ms(1.0, 1.0, 10.0, 1e-6) == pytest.approx(48.9, abs=0.3)      # Pozar: w/h ~0.95 for 50 ohm on er 10
+    # wide trace on thin prepreg (w/h 2): IPC-2141 reads ~15 % low here; Hammerstad-Jensen does not
+    assert _ms(0.15, 0.074, 4.0, 0.035) > 45
+
+
+def test_stripline_matches_exact_solution():
+    from kicad_zcheck.model import _sl
+
+    def exact(w, b, er):                     # zero-thickness centred stripline, conformal mapping (Cohn)
+        k = 1 / math.cosh(math.pi * w / (2 * b))
+        kp = math.sqrt(1 - k * k)
+
+        def K(m):                             # complete elliptic integral of the first kind, by the AGM
+            a, g = 1.0, math.sqrt(1 - m)
+            for _ in range(30):
+                a, g = (a + g) / 2, math.sqrt(a * g)
+            return math.pi / (2 * a)
+        return 30 * math.pi / math.sqrt(er) * K(k * k) / K(kp * kp)
+
+    for w, b in [(2.66, 3.2), (0.1, 0.3), (0.2, 0.25)]:
+        assert _sl(w, b / 2, 4.0, 0.0) == pytest.approx(exact(w, b, 4.0), rel=0.005)
+    assert _sl(2.66, 1.6, 2.2, 0.0) == pytest.approx(50, abs=0.3)         # Pozar example 3.5
+
+
+def test_values_on_a_stackup():
     st = eight_layer()
-    # IPC-2141 microstrip by hand: 87/sqrt(4.1+1.41)*ln(5.98*0.092/(0.8*0.1+0.035))
-    want = 87 / math.sqrt(5.51) * math.log(5.98 * 0.092 / (0.8 * 0.1 + 0.035))
-    assert z0(env(st, "B.Cu", PLANES), 0.1) == pytest.approx(want)
     e3 = env(st, "In3.Cu", PLANES)
     assert z0(e3, 0.09) == pytest.approx(61, abs=1)         # the value our board review used
-    assert zdiff(e3, 0.13, 0.10) == pytest.approx(101, abs=1.5)
+    # pairs: a 2D finite-difference field solve of this cross-section gives 76.1 ohm for a centred 0.13/0.10 pair in
+    # 0.33 mm of er 4.0; the closed form reads about 5 % high (thick-copper coupling is not modelled)
+    from kicad_zcheck.model import Env
+    centred = Env("x", "stripline", 0.15, 4.0, 0.15, 4.0, 0.03, "p", "q")
+    assert zdiff(centred, 0.13, 0.10) == pytest.approx(76.1, rel=0.07)
+    assert z0(centred, 0.13) == pytest.approx(47.2, rel=0.01)                # field solve 47.17
+    offset = Env("x", "stripline", 0.406, 4.3, 0.13, 4.3, 0.03, "p", "q")
+    assert z0(offset, 0.13) == pytest.approx(51.3, rel=0.04)                 # field solve 51.28
+    loose = zdiff(centred, 0.13, 5.0)
+    assert loose == pytest.approx(2 * z0(centred, 0.13), rel=0.001)          # far apart: twice the single line
 
 
 def test_monotonic_and_solver():
