@@ -108,6 +108,18 @@ layer at the module socket, where the ground vias are spaced along the connector
 
 ![kicad-zcheck returns map of the Antmicro DDR4 tester](docs/antmicro-ddr4-tester-returns.png)
 
+## Side by side
+
+<table>
+<tr><th>Antmicro LPDDR4 test board (40 / 80 ohm)</th><th>Antmicro DDR4 tester (40 / 80 ohm)</th></tr>
+<tr><td><img src="docs/antmicro-lpddr4-routed.png" alt="kicad-zcheck routed map of the LPDDR4 channel"></td>
+<td><img src="docs/antmicro-ddr4-tester-routed.png" alt="kicad-zcheck routed map of the DDR4 channel"></td></tr>
+<tr><td><code>routed</code>: inner layer 96 % single, 86 % pairs within 10 %; top-layer nets well above 40 ohm</td><td><code>routed</code>: three inner layers 88-89 % single, up to 93 % pairs; In7 just under 36 ohm</td></tr>
+<tr><td><img src="docs/antmicro-lpddr4-returns.png" alt="kicad-zcheck returns map of the LPDDR4 channel"></td>
+<td><img src="docs/antmicro-ddr4-tester-returns.png" alt="kicad-zcheck returns map of the DDR4 channel"></td></tr>
+<tr><td><code>returns</code>: 20 layer changes, all on the same ground reference</td><td><code>returns</code>: 268 layer changes; ground via 1 mm away at the median, 3.65 mm worst</td></tr>
+</table>
+
 ## Why we wrote it
 
 On our board the DDR net classes were set to the 50 ohm width, and the design-rule check was clean. Measuring the
