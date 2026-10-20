@@ -168,11 +168,18 @@ The stack-up is read from the board file itself (Board Setup > Physical Stackup)
 The impedance numbers are closed-form estimates, checked against published values, exact solutions and a 2D field
 solve (details and scripts in [docs/accuracy](docs/accuracy/README.md)):
 
-- **Single-ended, inner layers:** Wheeler's stripline formula, within about 3 % of a field solve, centred or off-centre.
+- **Single-ended, inner layers between two planes:** Wheeler's stripline formula, within about 3 % of a field solve,
+  centred or off-centre.
 - **Single-ended, outer layers:** Hammerstad and Jensen, the model behind KiCad's own calculator. Solder mask is not
   modelled and pulls the real value down a few ohm.
-- **Pairs, inner layers:** Cohn's coupled-stripline result, 5-8 % high with typical copper thickness.
+- **Pairs, inner layers between two planes:** Cohn's coupled-stripline result, 5-8 % high with typical copper thickness.
 - **Pairs, outer layers:** an empirical coupling factor (IPC-2141): treat it as +-10 %.
+
+**Not handled yet: an inner layer with a plane on one side only** (for example In1 when F.Cu above it is not a plane,
+or a stretch of inner trace over a gap in one of its two planes). Such a trace is computed as an outer-layer microstrip with
+air above it, so the dielectric covering it is left out and both its single-ended and pair numbers read high. For a
+0.10 mm trace 0.13 mm over its plane under 0.092 mm of prepreg, kicad-zcheck gives 77.6 ohm where a 2D field solve
+gives 62.8-63.7 ohm, 22-24 % high. Treat numbers on such layers as an upper limit, not an estimate.
 
 They are for finding the problem and comparing options. Your fabricator's impedance calculation and test coupons
 are the authority: send them the targets, widths and reference layers and let them set the build.

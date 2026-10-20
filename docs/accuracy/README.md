@@ -14,6 +14,18 @@ were checked against and how far off they can be.
 
 Solder mask is not modelled. On an outer layer it pulls the real impedance down a few ohm.
 
+### Not handled yet: an inner layer with a plane on one side only
+
+An inner trace with a plane on one side and only dielectric between it and the board surface (a covered, or buried,
+microstrip) is computed as a surface microstrip with air above, so the dielectric covering it is left out. That
+reads high:
+
+| Line | Checked against | kicad-zcheck | Result |
+|---|---|---|---|
+| In1, 0.10 mm trace, 30 um copper, 0.13 mm (er 4.17) over In2, under 0.092 mm prepreg (er 4.1) and an empty F.Cu level | 2D field solve (`fd_covered.py`): 63.7 ohm, 62.8 ohm with 0.025 mm of mask (er 3.8) | 77.6 ohm | 22-24 % high |
+
+The same applies to pairs on such a layer. Until this case is modelled, treat numbers there as an upper limit.
+
 ## Differential pairs
 
 | Line | Formula | Checked against | Result |
@@ -46,9 +58,13 @@ centred-stripline solution (37.74 against 37.98 ohm with a 2.5 um trace). Each c
 sizes and extrapolated. On its uniform grid it does not converge well for microstrip, so it is used for stripline
 only.
 
+`fd_covered.py` solves the covered microstrip above: a cell-centred grid in a 4 mm wide box with 2 mm of air above
+the board, solved at 5 and 2.5 um cells and extrapolated, with a stripline on the same stack-up as a control.
+
 ```bash
 python3 fd2d.py          # the self-check
 python3 fd_compare.py    # the table above
+python3 fd_covered.py    # the covered-microstrip row
 ```
 
 Run them with KiCad's Python, or any Python with numpy and scipy.
