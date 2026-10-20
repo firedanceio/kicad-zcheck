@@ -176,10 +176,10 @@ solve (details and scripts in [docs/accuracy](docs/accuracy/README.md)):
 - **Pairs, outer layers:** an empirical coupling factor (IPC-2141): treat it as +-10 %.
 
 **Not handled yet: an inner layer with a plane on one side only** (for example In1 when F.Cu above it is not a plane,
-or a stretch of inner trace over a gap in one of its two planes). Such a trace is computed as an outer-layer microstrip with
-air above it, so the dielectric covering it is left out and both its single-ended and pair numbers read high. For a
-0.10 mm trace 0.13 mm over its plane under 0.092 mm of prepreg, kicad-zcheck gives 77.6 ohm where a 2D field solve
-gives 62.8-63.7 ohm, 22-24 % high. Treat numbers on such layers as an upper limit, not an estimate.
+or a stretch of inner trace over a gap in one of its two planes). Such a trace is computed as an outer-layer
+microstrip with air above it, so the dielectric covering it is left out and both its single-ended and pair numbers
+read high. For a 0.10 mm trace 0.13 mm over its plane under 0.092 mm of prepreg, kicad-zcheck gives 77.6 ohm where a
+2D field solve gives 62.8-63.7 ohm, 22-24 % high. Treat numbers on such layers as an upper limit, not an estimate.
 
 They are for finding the problem and comparing options. Your fabricator's impedance calculation and test coupons
 are the authority: send them the targets, widths and reference layers and let them set the build.
