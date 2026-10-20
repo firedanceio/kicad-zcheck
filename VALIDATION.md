@@ -19,8 +19,9 @@ Full tables and the scripts are in [docs/accuracy](docs/accuracy/README.md). In 
 | Line | Checked against | Before (IPC-2141) | Now |
 |---|---|---|---|
 | Outer layer, single | Hammerstad & Jensen (KiCad calculator's model), published values | 15-24 % low over 0.074 mm prepreg | Hammerstad & Jensen |
-| Inner layer, single | exact conformal-mapping solution; 2D field solve | within 2 % at 0.13 mm, about 10 % low at 0.2 mm | within 3.3 % of the field solve, centred or off-centre |
-| Inner layer, pair | 2D field solve | 15-31 % high | 5-8 % high |
+| Inner layer between two planes, single | exact conformal-mapping solution; 2D field solve | within 2 % at 0.13 mm, about 10 % low at 0.2 mm | within 3.3 % of the field solve, centred or off-centre |
+| Inner layer between two planes, pair | 2D field solve | 15-31 % high | 5-8 % high |
+| Inner layer, plane on one side only | 2D field solve (`docs/accuracy/fd_covered.py`) | not checked | not handled yet: 17-24 % high, treat as an upper limit (see the README) |
 | Outer layer, pair | not checked | empirical | empirical, treat as +-10 % |
 
 The off-centre check also settled how to treat a trace that is closer to one plane: combining the two sides in
