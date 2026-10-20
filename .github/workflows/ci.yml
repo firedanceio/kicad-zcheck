@@ -1,0 +1,47 @@
+name: CI
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  test:
+    name: pytest, Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: { python: ["3.9", "3.12"] }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "${{ matrix.python }}" }
+      - run: pip install -e '.[test]'
+      # the board tests need KiCad's pcbnew module and skip here; the kicad job below runs them
+      - run: pytest -v -rs
+
+  kicad:
+    name: pytest on KiCad 10 (board tests included)
+    runs-on: ubuntu-latest
+    container:
+      image: kicad/kicad:10.0
+      options: --user root
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pip and venv
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends python3-pip python3-venv
+      - name: Install kicad-zcheck
+        run: |
+          python3 -m venv --system-site-packages /opt/venv
+          /opt/venv/bin/python -m pip install -e '.[test,maps]'
+          /opt/venv/bin/python -c "import pcbnew; print('pcbnew', pcbnew.Version())"
+      - name: Run tests
+        run: /opt/venv/bin/python -m pytest -v -rs -p no:cacheprovider --junitxml=junit.xml
+      - name: Check that no test was skipped
+        shell: python3 {0}
+        run: |
+          import xml.etree.ElementTree as ET
+          root = ET.parse("junit.xml").getroot()
+          suite = root if root.tag == "testsuite" else root.find("testsuite")
+          tests, skipped = int(suite.get("tests")), int(suite.get("skipped"))
+          print(f"{tests} tests, {skipped} skipped")
+          if skipped or not tests:
+              raise SystemExit("the pcbnew tests must run on KiCad, not skip")
