@@ -9,8 +9,8 @@ jobs:
     strategy:
       matrix: { python: ["3.9", "3.12"] }
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with: { python-version: "${{ matrix.python }}" }
       - run: pip install -e '.[test]'
       # the board tests need KiCad's pcbnew module and skip here; the kicad job below runs them
@@ -23,7 +23,7 @@ jobs:
       image: kicad/kicad:10.0
       options: --user root
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install pip and venv
         run: |
           apt-get update -qq
