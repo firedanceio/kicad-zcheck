@@ -190,4 +190,4 @@ What we tested before release, on which boards, and what it turned up: [VALIDATI
 
 ## License
 
-Apache 2.0. Made by [Firedance](https://firedance.io).
+Apache 2.0. Made by [Firedance](https://www.getfiredance.com).
